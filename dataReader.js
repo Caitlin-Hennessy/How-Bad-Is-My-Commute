@@ -2,6 +2,7 @@ if (process.env.NODE_ENV !== "production") {
     require("dotenv").load();
 }
 var request = require("request"),
+    fs = require("fs")
     MongoClient = require("mongodb").MongoClient;
 
 var mongoUrl = process.env.MONGO_URL;
@@ -22,46 +23,46 @@ function getTravelTimeFromBody(body) {
     return body.rows[0].elements[0].duration_in_traffic.value;
 }
 
-MongoClient.connect(mongoUrl, (err, db) => {
-    if (err) throw err;
-    var dbo = db.db("travel_times");
-
-    function updateData(collection, mapApiUrl) {
-        console.log(`${new Date()} in updateData`);
-        request(mapApiUrl, {json: true}, (err, res, body) => {
-            if (!err) {
-                try {
-                    var travelTime = getTravelTimeFromBody(body);
-                } catch (e) {
-                    console.log(`Error extracting travel time from body ${e}`);
-                    console.log(body);
-                    return;
-                }
-                dbo.collection(collection).insertOne({
-                    timestamp: new Date(),
-                    travelTime: travelTime
-                }, (err, res) => {
-                    if (err) {
-                        console.log(err);
-                    } else {
-                        console.log(`Updated collection ${collection}`);
-                    }
-                });
-            } else {
-                console.log(`Error in maps API request ${err}`);
-            }
-        })
-    }
-
+var stream = fs.createWriteStream("data.json");
+stream.once("open", (fd) => {
     var timer = setInterval(() => {
         var currentHour = new Date().getHours();
         if (8 <= currentHour && currentHour < 20) {
             console.log("About to update data");
-            for (var pair of [["home_work", urlLeg1], ["work_gym", urlLeg2], ["gym_home", urlLeg3]]) {
-                var collection = pair[0];
-                var mapApiUrl = pair[1];
-                updateData(collection, mapApiUrl);
-            }
+
+            var homeToWorkTime, workToGymTime, gymToHomeTime;
+            request(urlLeg1, {json: true}, (err, res, body) => {
+                try {
+                   homeToWorkTime = getTravelTimeFromBody(body);
+                } catch (e) {
+                    console.log(`Error extracting travel time from body ${e}`);
+                    console.log(body);
+                }
+                request(urlLeg2, {json: true}, (err, res, body) => {
+                    try {
+                       workToGymTime = getTravelTimeFromBody(body);
+                    } catch (e) {
+                        console.log(`Error extracting travel time from body ${e}`);
+                        console.log(body);
+                    }
+                    request(urlLeg3, {json: true}, (err, res, body) => {
+                        try {
+                           gymToHomeTime = getTravelTimeFromBody(body);
+                           var dataObj = {
+                               time: new Date(),
+                               homeWorkTime: homeToWorkTime,
+                               workGymTime: workToGymTime,
+                               gymHomeTime: gymToHomeTime
+                           };
+                           stream.write(JSON.stringify(dataObj) + "\n");
+                           console.log("Successfully updated data");
+                        } catch (e) {
+                            console.log(`Error extracting travel time from body ${e}`);
+                            console.log(body);
+                        }
+                    });
+                });
+            });
         } else {
             console.log(`Hour not in range ${currentHour}`);
         }
