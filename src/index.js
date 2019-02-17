@@ -3,108 +3,67 @@ import ReactDOM from "react-dom";
 import Plot from "react-plotly.js";
 import "./index.css";
 
-var date0 = new Date(2018, 12, 10, 8);
-var date1 = new Date(2018, 12, 10, 12, 1);
-var date2 = new Date(2018, 12, 10, 12, 6);
-var date3 = new Date(2018, 12, 10, 17, 15);
-var date4 = new Date(2018, 12, 10, 20);
+//TODO
+//Front end
+//Format chart with legends, 3 traces
+//Store data in state
 
-var testData = {
-  [date0]: {
-    home_work: 10,
-    work_gym: 10,
-    gym_home: 6
-  },
-  [date1]: {
-    home_work: 15,
-    work_gym: 12,
-    gym_home: 10
-  },
-  [date2]: {
-    home_work: 17,
-    work_gym: 14,
-    gym_home: 12
-  },
-  [date3]: {
-    home_work: 35,
-    work_gym: 20,
-    gym_home: 26
-  },
-  [date4]: {
-    home_work: 14,
-    work_gym: 11,
-    gym_home: 10
-  }
-}
+//Connecting front and back
+//Put timer for re-querying data in ComponentDidMount
+//Update data parser
 
-function getDisplayTime(dateStr) {
-  var dateObj = new Date(dateStr);
-  var minutes = dateObj.getMinutes();
-  return `${dateObj.getHours()}:${minutes < 10 ? "0" + minutes : minutes}`;
-}
+//Back end
+//Figure out why random pauses
 
-function getZData(timeData) {
-  var zData = [];
-  var i = 0;
-  var timestamps = Object.keys(timeData);
+//Additional features
+//Time slider and buttons
+//Map insert with color-coded routes
+//Numeric label summary w/current times
+//"Last refreshed"
+//Promisified http library
+//HEATMAP
 
-  var getTotalTravelTime = (xTime, yTime) => {
-    var departGymTime = new Date(new Date(yTime).getTime() + 5400000).toString();
-    var gymHomeTravelTime = 6;
-    if (timestamps.includes(departGymTime)) {
-      gymHomeTravelTime = timestamps[departGymTime].gym_home;
-    }
-    return (
-      timeData[xTime].home_work +
-      timeData[yTime].work_gym + 
-      gymHomeTravelTime
-    );
-  }
-
-  for (var xTime of timestamps) {
-    zData.push([]);
-    for (var yTime of timestamps) {
-      zData[i].push(getTotalTravelTime(xTime, yTime));
-    }
-    ++i;
-  }
-
-  return zData;
-}
 
 class Charts extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      homeToWorkTrace: {
+        x: ['2013-10-04 08:00:00', '2013-10-04 10:15:00', '2013-10-04 12:00:00'],
+        y: [15, 10, 8],
+        type: 'scatter',
+        name: 'Home to work' 
+      },
+      workToGymTrace : {
+        x: ['2013-10-04 08:15:00', '2013-10-04 10:06:00', '2013-10-04 12:55:00'],
+        y: [12, 7, 10],
+        type: 'scatter',
+        name: 'Work to gym'
+      },
+      gymToHomeTrace : {
+        x: ['2013-10-04 08:05:00', '2013-10-04 10:16:00', '2013-10-04 12:15:00'],
+        y: [15, 7, 12],
+        type: 'scatter',
+        name: 'Gym to home'
+      }
+    }
+  }
   render() {
-    console.log(getZData(testData));
+    var layout = {
+      yaxis: {
+        range: [0, 20]
+      }
+    };
     return (
       <Plot
-        data={[
-          {
-            //z: [[1, 20, 30], [20, 1, 60], [30, 60, 1]],
-            z: getZData(testData),
-            type: 'heatmap',
-            colorscale: "Bluered"
-          },
-        ]}
-        layout={ {
-          width: 720, 
-          height: 480, 
-          title: 'Total travel time', 
-          xaxis: {
-            ticktext: (Object.keys(testData).map(getDisplayTime)),
-            tickvals: [0, 1, 2, 3, 4],
-            title: "Leave work"
-          }, 
-          yaxis: {
-            title: "Leave home",
-            ticktext: (Object.keys(testData).map(getDisplayTime)),
-            tickvals: [0, 1, 2, 3, 4]
-          }} 
-        }
+        data={[this.state.homeToWorkTrace, 
+          this.state.workToGymTrace, 
+          this.state.gymToHomeTrace]}
+        layout={layout}
       />
     );
   }
 }
-
 // ========================================
 
 ReactDOM.render(
