@@ -1,3 +1,10 @@
 body {
   margin: 20px;
 }
+
+.summary {
+  font-family: sans-serif;
+  color: #555;
+  margin-left: 60px;
+  margin-bottom: 20px;
+}

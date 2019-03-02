@@ -55,10 +55,8 @@ class Charts extends React.Component {
     var selectorOptions = {
       buttons: [
         {
-          step: "hour",
-          stepmode: "backward",
-          count: 1,
-          label: "Past hour"
+          label: "All time",
+          step: "all"
         },
         {
           step: "day",
@@ -67,28 +65,59 @@ class Charts extends React.Component {
           label: "Today"
         },
         {
-          step: "all"
+          step: "hour",
+          stepmode: "backward",
+          count: 1,
+          label: "Past hour"
         }
       ]};
     var layout = {
       title: "Commute Time",
       xaxis: {
         rangeselector: selectorOptions,
-        rangeslider: {
-        }
+        autorange: true
       },
       yaxis: {
-        range: [0, 20]
+        //range: [0, 20],
+        autorange: true
+      }
+    };
+
+    class Summary extends React.Component {
+      render() {
+        var routeName = this.props.name.toLowerCase();
+        var maxTime = Math.max.apply(null, this.props.data);
+        var latestTime = this.props.data[this.props.data.length-1];
+        return(
+          <div className="summary">
+            <div>Max {routeName} time: {maxTime} minutes</div>
+            <div>Current {routeName} time: {latestTime} minutes</div>
+          </div>
+        )
       }
     };
 
     return (
-      <Plot
-        data={[this.state.homeToWorkTrace, 
-          this.state.workToGymTrace, 
-          this.state.gymToHomeTrace]}
-        layout={layout}
-      />
+      <div>
+        <Plot
+          data={[this.state.homeToWorkTrace, 
+            this.state.workToGymTrace, 
+            this.state.gymToHomeTrace]}
+          layout={layout}
+        />
+        <Summary 
+          name={this.state.homeToWorkTrace.name}
+          data={this.state.homeToWorkTrace.y}
+        />
+        <Summary
+          name={this.state.workToGymTrace.name}
+          data={this.state.workToGymTrace.y}
+        />
+        <Summary
+          name={this.state.gymToHomeTrace.name}
+          data={this.state.gymToHomeTrace.y}
+        />
+      </div>
     );
   }
 }
