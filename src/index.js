@@ -23,6 +23,19 @@ import "./index.css";
 //Promisified http library
 //HEATMAP
 
+class Summary extends React.Component {
+  render() {
+    var routeName = this.props.name.toLowerCase();
+    var maxTime = Math.max.apply(null, this.props.data);
+    var latestTime = this.props.data[this.props.data.length-1];
+    return(
+      <div className="summary">
+        <div>Max {routeName} time: {maxTime} minutes</div>
+        <div>Current {routeName} time: {latestTime} minutes</div>
+      </div>
+    )
+  }
+};
 
 class Charts extends React.Component {
   constructor(props) {
@@ -48,8 +61,8 @@ class Charts extends React.Component {
         type: 'scatter',
         name: 'Gym to home',
         mode: "lines"
-      }
-    }
+      }    
+    };
   }
   render() {
     var selectorOptions = {
@@ -75,7 +88,7 @@ class Charts extends React.Component {
       title: "Commute Time",
       xaxis: {
         rangeselector: selectorOptions,
-        autorange: true
+        autorange: true      
       },
       yaxis: {
         //range: [0, 20],
@@ -83,27 +96,30 @@ class Charts extends React.Component {
       }
     };
 
-    class Summary extends React.Component {
-      render() {
-        var routeName = this.props.name.toLowerCase();
-        var maxTime = Math.max.apply(null, this.props.data);
-        var latestTime = this.props.data[this.props.data.length-1];
-        return(
-          <div className="summary">
-            <div>Max {routeName} time: {maxTime} minutes</div>
-            <div>Current {routeName} time: {latestTime} minutes</div>
-          </div>
-        )
-      }
-    };
 
+    console.log("in render() for chart");
     return (
       <div>
         <Plot
           data={[this.state.homeToWorkTrace, 
-            this.state.workToGymTrace, 
-            this.state.gymToHomeTrace]}
+          this.state.workToGymTrace, 
+          this.state.gymToHomeTrace]}
           layout={layout}
+          onUpdate={(figure) => {
+            console.log("in OnUpdate");
+            console.log(figure);
+            console.log(JSON.stringify(figure.data[0]));
+            var startDate = figure.layout.xaxis.range[0];
+            console.log("updating state")
+            var newState = Object.assign(this.state);
+            var newXRange1 = this.state.homeToWorkTrace.x.filter(e => e > startDate);
+            newState.homeToWorkTrace.x = newXRange1;
+            newState.homeToWorkTrace.y = this.state.homeToWorkTrace.y.slice(
+              this.state.homeToWorkTrace.y.length - newXRange1.length);
+            this.setState(newState);
+            }}
+          onSliderEnd={(figure) => console.log("in OnSliderEnd")}
+          onButtonClicked={(figure) => console.log("in OnButtonClicked")}
         />
         <Summary 
           name={this.state.homeToWorkTrace.name}
